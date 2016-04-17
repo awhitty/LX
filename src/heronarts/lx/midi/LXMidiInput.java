@@ -131,7 +131,9 @@ public class LXMidiInput {
           message = new LXMidiAftertouch(sm);
           break;
         case 0xF0:
-          LXMidiInput.this.handleClockSignal(sm);
+          if (LXMidiInput.this.midiClockEnabled) {
+            LXMidiInput.this.handleClockSignal(sm);
+          }
           break;
         }
         if (message != null) {
