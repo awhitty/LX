@@ -19,6 +19,7 @@
 package heronarts.lx.midi;
 
 import heronarts.lx.LX;
+import heronarts.lx.Tempo;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +38,10 @@ public class LXMidiInput {
   private final List<LXMidiListener> listeners = new ArrayList<LXMidiListener>();
 
   private boolean isEngineInput = false;
+
+  private boolean midiClockEnabled = false;
+
+  private int midiClockCounter = 0;
 
   public LXMidiInput(LX lx, MidiDevice device) throws MidiUnavailableException {
     this(lx.engine.midiEngine, device);
@@ -77,6 +82,21 @@ public class LXMidiInput {
   }
 
   /**
+  * Enables listening for MIDI beat clock signals to sync the LX engine's
+  * master tempo object to external controllers.
+  */
+  public LXMidiInput enableMidiClock() {
+    this.midiClockEnabled = true;
+    this.midiClockCounter = 0;
+    return this;
+  }
+
+  public LXMidiInput disableMidiClock() {
+    this.midiClockEnabled = false;
+    return this;
+  }
+
+  /**
    * This receiver is called by a MIDI thread, it just puts messages
    * into a queue that can then be called by the engine thread.
    */
@@ -110,11 +130,33 @@ public class LXMidiInput {
         case ShortMessage.CHANNEL_PRESSURE:
           message = new LXMidiAftertouch(sm);
           break;
+        case 0xF0:
+          LXMidiInput.this.handleClockSignal(sm);
+          break;
         }
         if (message != null) {
           midiEngine.queueMessage(message.setInput(LXMidiInput.this));
         }
       }
+    }
+  }
+
+  private void handleClockSignal(ShortMessage sm) {
+    Tempo tempo = this.midiEngine.lx.tempo;
+    switch (sm.getStatus()) {
+    case ShortMessage.TIMING_CLOCK:
+      if (this.midiClockCounter == 0) {
+        tempo.tap(false);
+      }
+      this.midiClockCounter += 1;
+      this.midiClockCounter %= 24;
+      break;
+    case ShortMessage.START:
+      tempo.trigger();
+      break;
+    case ShortMessage.STOP:
+      this.midiClockCounter = 0;
+      break;  
     }
   }
 

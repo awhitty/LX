@@ -203,6 +203,25 @@ public class Tempo extends LXComponent {
     trigger();
   }
 
+  /**
+  * If smoothing is disabled, tap(false) infers the beat period from the time
+  * difference between the current tap and the last tap. Does not re-trigger
+  * the beat when invoked. This approach should be used to stay synced with
+  * an external tempo-keeping mechanism, not a human.
+  */
+  public void tap(boolean smoothingEnabled) {
+    if (!smoothingEnabled) {
+      long now = System.currentTimeMillis();
+      this.firstTap = lastTap;
+      this.lastTap = now;
+
+      double beatPeriod = this.lastTap - this.firstTap;
+      setBpm(MINUTE / beatPeriod);
+    } else {
+      tap();
+    }
+  }
+
   @Override
   public void loop(double deltaMs) {
     super.loop(deltaMs);
