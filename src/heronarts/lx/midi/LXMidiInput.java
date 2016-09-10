@@ -31,6 +31,8 @@ import javax.sound.midi.ShortMessage;
 
 public class LXMidiInput {
 
+  private final static int MIDI_PULSES_PER_QUARTER_NOTE = 24;
+
   private final MidiDevice device;
 
   private final LXMidiEngine midiEngine;
@@ -144,17 +146,15 @@ public class LXMidiInput {
   }
 
   private void handleClockSignal(ShortMessage sm) {
-    Tempo tempo = this.midiEngine.lx.tempo;
     switch (sm.getStatus()) {
     case ShortMessage.TIMING_CLOCK:
       if (this.midiClockCounter == 0) {
-        tempo.tap(false);
+        this.midiEngine.lx.tempo.tap(false);
       }
-      this.midiClockCounter += 1;
-      this.midiClockCounter %= 24;
+      this.midiClockCounter = (this.midiClockCounter + 1) % MIDI_PULSES_PER_QUARTER_NOTE;
       break;
     case ShortMessage.START:
-      tempo.trigger();
+      this.midiEngine.lx.tempo.trigger();
       break;
     case ShortMessage.STOP:
       this.midiClockCounter = 0;

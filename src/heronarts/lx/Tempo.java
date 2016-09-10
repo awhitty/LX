@@ -189,18 +189,7 @@ public class Tempo extends LXComponent {
    * this is all that is desired.
    */
   public void tap() {
-    long now = System.currentTimeMillis();
-    if (now - this.lastTap > 2000) {
-      this.firstTap = now;
-      this.tapCount = 0;
-    }
-    this.lastTap = now;
-    ++this.tapCount;
-    if (this.tapCount > 3) {
-      double beatPeriod = (this.lastTap - this.firstTap) / (double) (this.tapCount - 1);
-      setBpm(MINUTE / beatPeriod);
-    }
-    trigger();
+    tap(true);
   }
 
   /**
@@ -210,15 +199,26 @@ public class Tempo extends LXComponent {
   * an external tempo-keeping mechanism, not a human.
   */
   public void tap(boolean smoothingEnabled) {
-    if (!smoothingEnabled) {
+    if (smoothingEnabled) {
+      long now = System.currentTimeMillis();
+      if (now - this.lastTap > 2000) {
+        this.firstTap = now;
+        this.tapCount = 0;
+      }
+      this.lastTap = now;
+      ++this.tapCount;
+      if (this.tapCount > 3) {
+        double beatPeriod = (this.lastTap - this.firstTap) / (double) (this.tapCount - 1);
+        setBpm(MINUTE / beatPeriod);
+      }
+      trigger();
+    } else {
       long now = System.currentTimeMillis();
       this.firstTap = lastTap;
       this.lastTap = now;
 
       double beatPeriod = this.lastTap - this.firstTap;
       setBpm(MINUTE / beatPeriod);
-    } else {
-      tap();
     }
   }
 
